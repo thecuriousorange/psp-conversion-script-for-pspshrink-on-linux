@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Check if PSPShrink is installed
+command -v pspshrink >/dev/null 2>&1 || { echo >&2 "PSPShrink is required but not installed. Aborting."; exit 1; }
+
+# Set the path to the directory containing the ISO files
+ISO_DIRECTORY="."
+
+# Function to prompt the user for the compression level
+get_compression_level() {
+  read -p "Enter the compression level (0-9, where 0 is no compression and 9 is highest compression): " COMPRESSION_LEVEL
+}
+
+# Function to prompt the user for confirmation before proceeding
+confirm_proceed() {
+  read -p "This script will convert all ISO files in \"$ISO_DIRECTORY\" to CSO format. Continue (y/n)? " CHOICE
+  case "$CHOICE" in
+    y|Y ) ;;
+    * ) echo "Aborting."; exit;;
+  esac
+}
+
+# Prompt the user for confirmation
+confirm_proceed
+
+# Prompt the user for the compression level
+get_compression_level
+
+# Loop through all ISO files in the directory
+for ISO_FILE in "$ISO_DIRECTORY"/*.iso
+do
+  # Check if the file is an ISO
+  if [ -f "$ISO_FILE" ] && [ "${ISO_FILE##*.}" = "iso" ]
+  then
+    # Set the output file name
+    CSO_FILE="${ISO_FILE%.*}.cso"
+
+    # Convert the ISO to CSO using PSPShrink with the specified compression level
+    pspshrink "$COMPRESSION_LEVEL" "$ISO_FILE" "$CSO_FILE"
+
+    # Check if the conversion was successful
+    if [ $? -eq 0 ]
+    then
+      echo "Converted \"$ISO_FILE\" to \"$CSO_FILE\""
+    else
+      echo "Failed to convert \"$ISO_FILE\""
+    fi
+  fi
+done
